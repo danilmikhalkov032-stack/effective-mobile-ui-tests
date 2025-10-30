@@ -1,0 +1,12 @@
+﻿__pycache__
+*.pyc
+.venv
+env
+.git
+.gitignore
+.idea
+.vscode
+allure-results
+screenshots
+*.log
+.DS_Store

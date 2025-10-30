@@ -1,0 +1,25 @@
+Error occurred in event listener
+Traceback (most recent call last):
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\playwright\_impl\_connection.py", line 426, in dispatch
+    g.switch(self._replace_guids_with_channels(params))
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\playwright\_impl\_page.py", line 159, in <lambda>
+    self._channel.on("close", lambda _: self._on_close())
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\playwright\_impl\_page.py", line 274, in _on_close
+    self.emit(Page.Events.Close, self)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\base.py", line 208, in emit
+    handled = self._call_handlers(event, args, kwargs)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\base.py", line 184, in _call_handlers
+    self._emit_run(f, args, kwargs)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\asyncio.py", line 53, in _emit_run
+    self.emit("error", exc)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\base.py", line 211, in emit
+    self._emit_handle_potential_error(event, args[0] if args else None)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\base.py", line 169, in _emit_handle_potential_error
+    raise error
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\pyee\asyncio.py", line 51, in _emit_run
+    coro: Any = f(*args, **kwargs)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\playwright\_impl\_waiter.py", line 74, in listener
+    self._reject(error() if callable(error) else error)
+  File "C:\Users\Kezax\AppData\Local\Programs\Python\Python310\lib\site-packages\playwright\_impl\_frame.py", line 149, in <lambda>
+    lambda: cast(Page, self._page)._close_error_with_reason(),
+NameError: name 'Page' is not defined
