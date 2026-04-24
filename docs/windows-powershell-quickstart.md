@@ -24,6 +24,19 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 ---
 
+## Если ты остаёшься в `C:\projects` (без `cd`)
+
+Тогда запускай скрипт по полному пути:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\effective-mobile-ui-tests\scripts\run-party-games-dev.ps1
+```
+
+Это эквивалентно переходу в папку проекта.
+
+---
+
 ## Рабочий сценарий для твоего случая (папка уже есть)
 
 У тебя уже есть папка `C:\projects\effective-mobile-ui-tests`.

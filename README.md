@@ -179,3 +179,11 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 Важно: каждая команда с новой строки.
+
+
+### PowerShell: запуск из `C:\projects` без перехода в папку
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\effective-mobile-ui-tests\scripts\run-party-games-dev.ps1
+```
