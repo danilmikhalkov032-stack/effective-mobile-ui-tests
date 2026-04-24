@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const GAME_LIBRARY = [
   {
@@ -9,8 +9,10 @@ const GAME_LIBRARY = [
     duration: "10–15 мин",
     category: "Скрытые роли",
     mode: "Без ведущего",
+    difficulty: "Средняя",
     description: "Один игрок — шпион, остальные знают общую локацию.",
     ruleSummary: "Задавайте вопросы и найдите шпиона до конца таймера.",
+    defaultRoundSeconds: 180,
   },
   {
     id: "undercover",
@@ -20,8 +22,10 @@ const GAME_LIBRARY = [
     duration: "10–15 мин",
     category: "Скрытые слова",
     mode: "Без ведущего",
+    difficulty: "Средняя",
     description: "Один игрок получает отличающееся слово.",
     ruleSummary: "Обсуждайте, голосуйте и вычислите undercover-игрока.",
+    defaultRoundSeconds: 180,
   },
   {
     id: "whoami",
@@ -31,8 +35,10 @@ const GAME_LIBRARY = [
     duration: "15–20 мин",
     category: "Роли и догадки",
     mode: "Без ведущего",
+    difficulty: "Лёгкая",
     description: "Каждый угадывает своего персонажа через вопросы.",
     ruleSummary: "По очереди задавайте вопросы и угадайте роль.",
+    defaultRoundSeconds: 240,
   },
   {
     id: "alias",
@@ -42,8 +48,10 @@ const GAME_LIBRARY = [
     duration: "15–25 мин",
     category: "Командная",
     mode: "Без ведущего",
+    difficulty: "Лёгкая",
     description: "Объясняй слова своей команде на время.",
     ruleSummary: "Объясняйте слова, не используя однокоренные.",
+    defaultRoundSeconds: 120,
   },
   {
     id: "mafia",
@@ -53,8 +61,10 @@ const GAME_LIBRARY = [
     duration: "25–45 мин",
     category: "Социальная",
     mode: "С ведущим",
+    difficulty: "Высокая",
     description: "Приложение помогает вести фазы день/ночь.",
     ruleSummary: "Ночью роли ходят, днём обсуждение и голосование.",
+    defaultRoundSeconds: 0,
   },
   {
     id: "truthbluff",
@@ -64,8 +74,10 @@ const GAME_LIBRARY = [
     duration: "15–20 мин",
     category: "Блеф",
     mode: "С ведущим",
+    difficulty: "Лёгкая",
     description: "Истории, блеф и попытка угадать правду.",
     ruleSummary: "Делитесь историями и угадывайте, где правда.",
+    defaultRoundSeconds: 180,
   },
 ];
 
@@ -79,6 +91,13 @@ const UNDERCOVER_WORDS = [
 const WHO_AMI_ROLES = ["Шерлок", "Бэтмен", "Гарри Поттер", "Тор", "Илон Маск", "Пикачу"];
 const MAFIA_ROLES = ["Мафия", "Доктор", "Проститутка", "Комиссар", "Мирный"];
 
+const APP_TABS = [
+  { id: "home", label: "Старт" },
+  { id: "games", label: "Игры" },
+  { id: "packs", label: "Паки" },
+  { id: "profile", label: "Профиль" },
+];
+
 function pickRecommendations(players) {
   return GAME_LIBRARY.filter((game) => players >= game.minPlayers && players <= game.maxPlayers).slice(0, 3);
 }
@@ -87,60 +106,94 @@ function randomFrom(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-function buildDealData(gameId, players) {
+function formatSeconds(total) {
+  const minutes = String(Math.floor(total / 60)).padStart(2, "0");
+  const seconds = String(total % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function buildDealPackage(gameId, players) {
   const names = Array.from({ length: players }, (_, i) => `Игрок ${i + 1}`);
 
   if (gameId === "spy") {
     const spyIndex = Math.floor(Math.random() * players);
     const location = randomFrom(SPY_LOCATIONS);
-    return names.map((name, idx) => ({
-      name,
-      secret: idx === spyIndex ? "Ты — Шпион" : `Локация: ${location}`,
-      hint: idx === spyIndex ? "Слушай вопросы и вычисли локацию." : "Не выдавайте локацию слишком прямо.",
-    }));
+    return {
+      entries: names.map((name, idx) => ({
+        name,
+        secret: idx === spyIndex ? "Ты — Шпион" : `Локация: ${location}`,
+        hint: idx === spyIndex ? "Слушай вопросы и вычисли локацию." : "Не выдавайте локацию слишком прямо.",
+      })),
+      context: {
+        kind: "spy",
+        spyName: names[spyIndex],
+        location,
+      },
+    };
   }
 
   if (gameId === "undercover") {
     const oddIndex = Math.floor(Math.random() * players);
     const [commonWord, undercoverWord] = randomFrom(UNDERCOVER_WORDS);
-    return names.map((name, idx) => ({
-      name,
-      secret: `Твоё слово: ${idx === oddIndex ? undercoverWord : commonWord}`,
-      hint: "Опиши слово осторожно, чтобы не спалиться.",
-    }));
+    return {
+      entries: names.map((name, idx) => ({
+        name,
+        secret: `Твоё слово: ${idx === oddIndex ? undercoverWord : commonWord}`,
+        hint: "Опиши слово осторожно, чтобы не спалиться.",
+      })),
+      context: {
+        kind: "undercover",
+        undercoverName: names[oddIndex],
+        commonWord,
+        undercoverWord,
+      },
+    };
   }
 
   if (gameId === "whoami") {
-    return names.map((name, idx) => ({
-      name,
-      secret: `Ты: ${WHO_AMI_ROLES[idx % WHO_AMI_ROLES.length]}`,
-      hint: "Задавай вопросы, на которые отвечают Да/Нет.",
-    }));
+    return {
+      entries: names.map((name, idx) => ({
+        name,
+        secret: `Ты: ${WHO_AMI_ROLES[idx % WHO_AMI_ROLES.length]}`,
+        hint: "Задавай вопросы, на которые отвечают Да/Нет.",
+      })),
+      context: { kind: "whoami" },
+    };
   }
 
   if (gameId === "alias") {
-    return names.map((name, idx) => ({
-      name,
-      secret: idx % 2 === 0 ? "Команда A" : "Команда B",
-      hint: "Объясняйте слова быстро, не используя однокоренные.",
-    }));
+    return {
+      entries: names.map((name, idx) => ({
+        name,
+        secret: idx % 2 === 0 ? "Команда A" : "Команда B",
+        hint: "Объясняйте слова быстро, не используя однокоренные.",
+      })),
+      context: { kind: "alias" },
+    };
   }
 
-  return names.map((name, idx) => ({
-    name,
-    secret: `Твоя роль: ${MAFIA_ROLES[idx % MAFIA_ROLES.length]}`,
-    hint: "Сохрани роль в секрете и следуй фазам игры.",
-  }));
+  return {
+    entries: names.map((name, idx) => ({
+      name,
+      secret: `Твоя роль: ${MAFIA_ROLES[idx % MAFIA_ROLES.length]}`,
+      hint: "Сохрани роль в секрете и следуй фазам игры.",
+    })),
+    context: { kind: "mafia" },
+  };
 }
 
 export default function App() {
   const [screen, setScreen] = useState("home");
   const [players, setPlayers] = useState(6);
-  const [selectedGameId, setSelectedGameId] = useState(null);
+  const [selectedGameId, setSelectedGameId] = useState("spy");
   const [dealData, setDealData] = useState([]);
+  const [dealContext, setDealContext] = useState({ kind: null });
   const [dealIndex, setDealIndex] = useState(0);
   const [showSecret, setShowSecret] = useState(false);
   const [mafiaPhase, setMafiaPhase] = useState(0);
+  const [roundSeconds, setRoundSeconds] = useState(180);
+  const [timerActive, setTimerActive] = useState(false);
+  const [votedName, setVotedName] = useState("");
 
   const selectedGame = useMemo(
     () => GAME_LIBRARY.find((g) => g.id === selectedGameId) || null,
@@ -149,13 +202,40 @@ export default function App() {
 
   const recommendations = useMemo(() => pickRecommendations(players), [players]);
 
+  useEffect(() => {
+    if (!timerActive || screen !== "round") return;
+    const timer = setInterval(() => {
+      setRoundSeconds((prev) => {
+        if (prev <= 1) {
+          setTimerActive(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timerActive, screen]);
+
   const chips = ["6–8 игроков", "быстро", "скрытые роли", "на 10 минут"];
+
+  const openSetup = (gameId) => {
+    setSelectedGameId(gameId);
+    const game = GAME_LIBRARY.find((item) => item.id === gameId);
+    if (game) {
+      setRoundSeconds(game.defaultRoundSeconds || 180);
+    }
+    setScreen("setup");
+  };
 
   const startDeal = () => {
     if (!selectedGame) return;
-    setDealData(buildDealData(selectedGame.id, players));
+    const dealPackage = buildDealPackage(selectedGame.id, players);
+    setDealData(dealPackage.entries);
+    setDealContext(dealPackage.context);
     setDealIndex(0);
     setShowSecret(false);
+    setVotedName("");
+    setTimerActive(false);
     setScreen("deal");
   };
 
@@ -183,15 +263,27 @@ export default function App() {
     "День: обсуждение и голосование",
   ];
 
+  const resultTitle = useMemo(() => {
+    if (dealContext.kind === "spy") {
+      const hitSpy = votedName === dealContext.spyName;
+      return hitSpy ? "Шпион найден" : "Шпион ушёл от подозрений";
+    }
+    if (dealContext.kind === "undercover") {
+      const hit = votedName === dealContext.undercoverName;
+      return hit ? "Undercover раскрыт" : "Undercover выжил";
+    }
+    return "Раунд завершён";
+  }, [dealContext, votedName]);
+
+  const goToVoting = () => {
+    setTimerActive(false);
+    setScreen("vote");
+  };
+
   return (
     <main className="app">
       <header className="app-header">
-        <button className="ghost" onClick={() => setScreen("home")}>Party Companion</button>
-        <nav>
-          <button className="ghost" onClick={() => setScreen("games")}>Игры</button>
-          <button className="ghost" onClick={() => setScreen("packs")}>Паки</button>
-          <button className="ghost" onClick={() => setScreen("profile")}>Профиль</button>
-        </nav>
+        <button className="brand" onClick={() => setScreen("home")}>Party Companion</button>
       </header>
 
       {screen === "home" && (
@@ -199,7 +291,7 @@ export default function App() {
           <h1>Быстрые игры для компании</h1>
           <p>Один телефон. Быстрый старт. Без хаоса.</p>
           <button className="cta" onClick={() => setScreen("players")}>Начать игру</button>
-          <button className="secondary" onClick={() => selectedGame ? setScreen("setup") : setScreen("players")}>
+          <button className="secondary" onClick={() => setScreen(selectedGame ? "setup" : "players")}>
             Продолжить последнюю игру
           </button>
           <div className="chips">{chips.map((chip) => <span key={chip}>{chip}</span>)}</div>
@@ -227,7 +319,7 @@ export default function App() {
 
       {screen === "recommendations" && (
         <section className="stack">
-          <h2>Подходящие игры для {players} игроков</h2>
+          <h2>Подбор для {players} игроков</h2>
           {recommendations.map((game) => (
             <article key={game.id} className="card game-card">
               <div>
@@ -238,9 +330,10 @@ export default function App() {
                 <span>{game.duration}</span>
                 <span>{game.minPlayers}–{game.maxPlayers}</span>
                 <span>{game.category}</span>
+                <span>{game.difficulty}</span>
                 <span className={game.mode === "Без ведущего" ? "badge no-host" : "badge host"}>{game.mode}</span>
               </div>
-              <button className="cta" onClick={() => { setSelectedGameId(game.id); setScreen("setup"); }}>
+              <button className="cta" onClick={() => openSetup(game.id)}>
                 Играть
               </button>
             </article>
@@ -256,7 +349,7 @@ export default function App() {
             <article className="card game-card" key={game.id}>
               <h4>{game.title}</h4>
               <p>{game.description}</p>
-              <button className="secondary" onClick={() => { setSelectedGameId(game.id); setScreen("setup"); }}>Открыть</button>
+              <button className="secondary" onClick={() => openSetup(game.id)}>Открыть</button>
             </article>
           ))}
           <h3>Игры с ведущим</h3>
@@ -264,7 +357,7 @@ export default function App() {
             <article className="card game-card" key={game.id}>
               <h4>{game.title}</h4>
               <p>{game.description}</p>
-              <button className="secondary" onClick={() => { setSelectedGameId(game.id); setScreen("setup"); }}>Открыть</button>
+              <button className="secondary" onClick={() => openSetup(game.id)}>Открыть</button>
             </article>
           ))}
         </section>
@@ -279,6 +372,20 @@ export default function App() {
             <span>Длительность: {selectedGame.duration}</span>
             <span>{selectedGame.mode}</span>
           </div>
+          {selectedGame.mode === "Без ведущего" && (
+            <label className="timer-setting">
+              Таймер раунда (сек)
+              <input
+                type="range"
+                min="60"
+                max="420"
+                step="30"
+                value={roundSeconds}
+                onChange={(event) => setRoundSeconds(Number(event.target.value))}
+              />
+              <strong>{formatSeconds(roundSeconds)}</strong>
+            </label>
+          )}
           <button className="cta" onClick={startDeal}>Раздать роли</button>
         </section>
       )}
@@ -306,13 +413,64 @@ export default function App() {
 
       {screen === "round" && (
         <section className="card center stack">
-          <h2>Раунд запущен</h2>
-          <p>{selectedGame?.id === "spy" ? "Задавайте вопросы, чтобы вычислить шпиона." : "Обсуждение началось. Таймер идёт."}</p>
+          <h2>Этап обсуждения</h2>
+          <p className="timer">{formatSeconds(roundSeconds)}</p>
+          <p>
+            {selectedGame?.id === "spy"
+              ? "Задавайте вопросы и ищите шпиона."
+              : "Обсуждайте улики и ищите отличающегося игрока."}
+          </p>
           <div className="row">
-            <button className="secondary">Пауза</button>
-            <button className="cta">Завершить</button>
+            <button className="secondary" onClick={() => setTimerActive((s) => !s)}>
+              {timerActive ? "Пауза" : "Старт"}
+            </button>
+            <button className="secondary" onClick={() => { setTimerActive(false); setRoundSeconds(selectedGame?.defaultRoundSeconds || 180); }}>
+              Сброс
+            </button>
+            <button className="cta" onClick={goToVoting}>К голосованию</button>
           </div>
-          <button className="ghost" onClick={() => setScreen("home")}>Новая игра</button>
+        </section>
+      )}
+
+      {screen === "vote" && (
+        <section className="card stack">
+          <h2>Голосование</h2>
+          <p>Кого считаете подозрительным?</p>
+          <div className="vote-list">
+            {dealData.map((entry) => (
+              <button
+                key={entry.name}
+                className={votedName === entry.name ? "active" : ""}
+                onClick={() => setVotedName(entry.name)}
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+          <button className="cta" disabled={!votedName} onClick={() => setScreen("result")}>Подтвердить голос</button>
+        </section>
+      )}
+
+      {screen === "result" && (
+        <section className="card center stack">
+          <h2>{resultTitle}</h2>
+          <p>Вы выбрали: {votedName || "—"}</p>
+          {dealContext.kind === "spy" && (
+            <div className="secret">
+              <p>Шпион: {dealContext.spyName}</p>
+              <p>Локация: {dealContext.location}</p>
+            </div>
+          )}
+          {dealContext.kind === "undercover" && (
+            <div className="secret">
+              <p>Undercover: {dealContext.undercoverName}</p>
+              <p>Слова: {dealContext.commonWord} / {dealContext.undercoverWord}</p>
+            </div>
+          )}
+          <div className="row">
+            <button className="secondary" onClick={() => setScreen("setup")}>Сыграть ещё</button>
+            <button className="cta" onClick={() => setScreen("home")}>Новая игра</button>
+          </div>
         </section>
       )}
 
@@ -342,11 +500,23 @@ export default function App() {
       {screen === "profile" && (
         <section className="card stack">
           <h2>Профиль</h2>
-          <p>Последняя компания: 7 игроков</p>
-          <p>Любимая игра: Шпион</p>
+          <p>Последняя компания: {players} игроков</p>
+          <p>Любимая игра: {selectedGame?.title || "Шпион"}</p>
           <button className="secondary" onClick={() => setScreen("setup")}>Вернуться к последнему сценарию</button>
         </section>
       )}
+
+      <footer className="tabbar">
+        {APP_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            className={screen === tab.id ? "tab active" : "tab"}
+            onClick={() => setScreen(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </footer>
     </main>
   );
 }
