@@ -40,3 +40,82 @@ body { margin: 0; background: radial-gradient(circle at top, #1b1630 0%, #09090f
 .tags { display: flex; gap: 8px; margin-top: 10px; font-size: 12px; color: rgba(255,255,255,.65); }
 .stepper { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 .role-image { width: 100%; border-radius: 14px; margin: 10px 0; border: 1px solid rgba(255,255,255,.12); }
+
+/* Home */
+.home-page h1 {
+  margin: 2px 0 0;
+  font-size: 32px;
+  line-height: 1.1;
+}
+.home-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.home-kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(236, 236, 245, 0.5);
+}
+.home-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(196, 181, 253, 0.4);
+}
+
+.home-hero {
+  background: linear-gradient(135deg, rgba(124,58,237,0.23), rgba(29,78,216,0.18));
+}
+.home-hero-badge {
+  display: inline-flex;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,.9);
+  margin-bottom: 10px;
+}
+.home-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.home-tag {
+  font-size: 12px;
+  color: rgba(255,255,255,.88);
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.08);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.home-stat-label {
+  font-size: 12px;
+  color: rgba(236,236,245,.55);
+}
+.home-stat-value {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.home-stat-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(236,236,245,.6);
+}
+
+.home-footer-note {
+  font-size: 13px;
+  color: rgba(236,236,245,.8);
+}
