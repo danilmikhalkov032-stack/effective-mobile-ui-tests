@@ -187,3 +187,8 @@ Set-ExecutionPolicy -Scope Process Bypass
 Set-ExecutionPolicy -Scope Process Bypass
 .\effective-mobile-ui-tests\scripts\run-party-games-dev.ps1
 ```
+
+
+### PowerShell: не копируй `PS C:\...>`
+
+Копируй только команды. Префикс вида `PS C:\projects>` вставлять не нужно.

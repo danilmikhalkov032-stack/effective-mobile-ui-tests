@@ -2,6 +2,26 @@
 
 ## Самое важное правило
 
+## ВАЖНО: не вставляй префикс `PS C:\...>`
+
+В PowerShell `PS` — это команда (`Get-Process`).
+Если вставить строку вида `PS C:\projects> ...`, будет ошибка.
+
+Вставляй только саму команду, например:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
+а не:
+
+```powershell
+PS C:\projects> Set-ExecutionPolicy -Scope Process Bypass
+```
+
+---
+
+
 Вводи **по одной команде на строку** и нажимай Enter после каждой.
 Нельзя склеивать команды вот так: `cd aaa cd bbb`.
 
@@ -9,6 +29,15 @@
 
 ---
 
+
+## Запуск из любого места (даже из `C:\WINDOWS\system32`)
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+& "C:\projects\effective-mobile-ui-tests\scripts\run-party-games-dev.ps1"
+```
+
+---
 
 ## Режим "без ошибок" (вставь целиком одним блоком)
 
